@@ -1,1 +1,39 @@
+name: Build APK
 
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev \
+            libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+
+      - name: Install Python buildozer
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install buildozer cython==0.29.33
+
+      - name: Download Chinese font (Noto Sans SC)
+        run: |
+          cd $GITHUB_WORKSPACE
+          wget -q -O NotoSansSC-Regular.otf \
+            "https://github.com/googlefonts/noto-cjk/raw/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf"
+          ls -lh NotoSansSC-Regular.otf
+
+      - name: Build APK
+        run: buildozer -v android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: account-manager-apk
+          path: bin/*.apk
